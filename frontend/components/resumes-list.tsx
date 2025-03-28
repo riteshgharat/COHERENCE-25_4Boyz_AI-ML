@@ -20,6 +20,8 @@ export function ResumesList() {
   
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSummary, setSelectedSummary] = useState<string | null>(null);
+  // const [summary, setsummary] = useState<string | null>(null);
 
   // Delete a resume file
   const deleteResumeFile = async (filename: string) => {
@@ -60,6 +62,25 @@ export function ResumesList() {
     }
   };
 
+  // const fsummary = async ()=>{
+  //   try {
+  //     const response = await fetch("http://192.168.22.186:5000/rate_resumes", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ job_requirement: "Java" }),
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error(Failed to fetch summary: ${response.status});
+  //     }
+  //     const data = await response.json();
+
+  //     console.log(data.results[0]);
+  //   } catch (err) {
+  //     setError(err instanceof Error ? err.message : "Failed to fetch summary");
+  //   } 
+  // }
   // Convert score to status
   const getStatusFromScore = (score: number): string => {
     if (score >= 8) return "Processed";
@@ -112,8 +133,10 @@ export function ResumesList() {
       position: getPositionTitle(selectedPosition),
       date: new Date().toISOString().split("T")[0],
       status: getStatusFromScore(result.score),
+      
       size: "1.2 MB",
-      score: result.score.toFixed(2)
+      score: result.score.toFixed(2),
+      summary: result.summary || "No summary available",
     }));
   };
 
@@ -169,10 +192,12 @@ export function ResumesList() {
                     <thead>
                       <tr className="border-b bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
                         <th className="px-4 py-3">Resume</th>
-                        <th className="px-4 py-3">Position</th>
+                        {/* <th className="px-4 py-3">Position</th> */}
                         <th className="px-4 py-3">Upload Date</th>
+                        
                         <th className="px-4 py-3">Score</th>
                         <th className="px-4 py-3">Actions</th>
+                        <th className="px-4 py-3">Summary</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y dark:divide-gray-800">
@@ -185,7 +210,7 @@ export function ResumesList() {
                                 <span className="font-medium">{resume.name}</span>
                               </div>
                             </td>
-                            <td className="whitespace-nowrap px-4 py-3 text-sm">{resume.position}</td>
+                            {/* <td className="whitespace-nowrap px-4 py-3 text-sm">{resume.position}</td> */}
                             <td className="whitespace-nowrap px-4 py-3 text-sm">
                               {new Date(resume.date).toLocaleDateString()}
                             </td>
@@ -206,6 +231,12 @@ export function ResumesList() {
                                 )}
                               </Button>
                             </td>
+                            <td
+                    className="whitespace-nowrap px-4 py-3 text-sm text-blue-500 underline cursor-pointer"
+                    onClick={() => setSelectedSummary(resume.summary || "No summary available")}
+                  >
+                    {resume.summary ? "View Summary" : "No summary available"}
+                  </td>
                           </tr>
                         ))
                       ) : (
@@ -223,6 +254,21 @@ export function ResumesList() {
           </div>
         </CardContent>
       </Card>
+
+      {selectedSummary && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 m-0">
+          <div className="max-h-[80vh] bg-white p-6 rounded-lg shadow-lg w-[100%] max-w-md relative overflow-y-scroll">
+            <h2 className="text-lg font-semibold mb-2">Resume Summary</h2>
+            <p className="text-sm text-gray-600">{selectedSummary}</p>
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+              onClick={() => setSelectedSummary(null)}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
