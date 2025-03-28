@@ -1,5 +1,11 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  getDocs, 
+  serverTimestamp 
+} from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -35,6 +41,33 @@ export const saveApplicantData = async (applicantData) => {
     return docRef.id;
   } catch (error) {
     console.error("Error adding document: ", error);
+    throw error;
+  }
+};
+
+/**
+ * Fetches all applicants from Firestore
+ * @returns {Promise<Array>} - Array of applicant documents with their IDs
+ */
+export const getAllApplicants = async () => {
+  try {
+    const applicantsRef = collection(db, "applicants");
+    const snapshot = await getDocs(applicantsRef);
+    
+    // Map over documents to include both ID and data
+    const applicants = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      // Convert Firestore timestamp to JS Date if it exists
+      timestamp: doc.data().timestamp?.toDate() || new Date()
+    }));
+    
+    // Sort by timestamp (newest first)
+    applicants.sort((a, b) => b.timestamp - a.timestamp);
+    
+    return applicants;
+  } catch (error) {
+    console.error("Error fetching applicants:", error);
     throw error;
   }
 };
