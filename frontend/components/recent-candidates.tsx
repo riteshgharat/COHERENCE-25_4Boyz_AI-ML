@@ -1,7 +1,15 @@
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-
+import {useResumeContext} from "@/context/resume-context"
 export function RecentCandidates() {
+  const {
+    selectedPosition,
+    setSelectedPosition,
+    languageTools,
+    setLanguageTools,
+    // result,
+    // setresult
+  } = useResumeContext();
   const candidates = [
     {
       name: "Alex Johnson",

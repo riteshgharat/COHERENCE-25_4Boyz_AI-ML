@@ -23,15 +23,23 @@ import {
 } from "@/components/ui/select";
 import { FileUp, Upload } from "lucide-react";
 import { useEffect } from "react";
+import { useResumeContext } from "@/context/resume-context";
 
 export function ResumeUpload() {
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [selectedPosition, setSelectedPosition] = useState("frontend");
-  const [languageTools, setLanguageTools] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState(false);
+
+  // Use the context
+  const {
+    selectedPosition,
+    setSelectedPosition,
+    languageTools,
+    setLanguageTools,
+    fetchRatingData, // Add this to get the function from context
+  } = useResumeContext();
 
   useEffect(() => {
     switch (selectedPosition) {
@@ -51,9 +59,9 @@ export function ResumeUpload() {
         setLanguageTools("Figma, Adobe XD, Sketch, HTML, CSS, JavaScript");
         break;
       default:
-        setLanguageTools("dsa");
+        setLanguageTools("HTML, CSS, JavaScript");
     }
-  }, [selectedPosition]);
+  }, [selectedPosition, setLanguageTools]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -104,10 +112,13 @@ export function ResumeUpload() {
         formData.append("files", file);
       });
 
-      const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_UPLOAD_URL as string, {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        process.env.NEXT_PUBLIC_BACKEND_UPLOAD_URL as string,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`Upload failed with status: ${response.status}`);
@@ -115,6 +126,10 @@ export function ResumeUpload() {
 
       const result = await response.json();
       console.log("Upload successful:", result);
+
+      // After successful upload, refresh the rating data using the context function
+      await fetchRatingData();
+
       setUploadSuccess(true);
       setFiles([]);
     } catch (error) {
@@ -141,8 +156,9 @@ export function ResumeUpload() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="job-position">Job Position</Label>
+                // Update the Select component to use the context
                 <Select
-                  defaultValue="frontend"
+                  value={selectedPosition}
                   onValueChange={setSelectedPosition}
                 >
                   <SelectTrigger id="job-position">

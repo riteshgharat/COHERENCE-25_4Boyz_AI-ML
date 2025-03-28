@@ -123,7 +123,7 @@ export function DashboardOverview() {
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-2xl font-bold tracking-tight">Analytics</h2>
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             <Select defaultValue="30">
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select period" />
@@ -135,7 +135,7 @@ export function DashboardOverview() {
                 <SelectItem value="365">Last year</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </div> */}
         </div>
 
         <Tabs defaultValue="overview" className="space-y-4">

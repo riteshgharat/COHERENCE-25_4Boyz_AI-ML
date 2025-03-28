@@ -3,6 +3,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export function AnalyticsPanel() {
+
+  fetch('http://192.168.22.186:5000/extract_tech') // Replace with your API endpoint
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Network response was not ok ' + response.statusText);
+    }
+    return response.json(); // Parse the JSON data
+  })
+  .then(data => {
+
+    console.log(data); // Handle the data
+  })
+  .catch(error => {
+    console.error('There was a problem with the fetch operation:', error);
+  });
+
+  
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -140,7 +157,7 @@ export function AnalyticsPanel() {
             <Card className="col-span-1">
               <CardHeader>
                 <CardTitle>Candidate Sources</CardTitle>
-                <CardDescription>Distribution of resume sources</CardDescription>
+                {/* <CardDescription>Distribution of resume sources</CardDescription> */}
               </CardHeader>
               <CardContent>
                 <div className="h-[300px] w-full">
