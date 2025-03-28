@@ -13,10 +13,10 @@ export function DashboardSidebar({ activeTab, setActiveTab }: DashboardSidebarPr
   const { isOpen, toggle } = useSidebar()
 
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: Home },
-    { id: "resumes", label: "Resumes", icon: FileText },
-    { id: "applicants", label: "Applicants", icon: UserCheck }, // Added new menu item
     { id: "upload", label: "Upload", icon: Upload },
+    { id: "resumes", label: "Resumes", icon: FileText },
+    { id: "dashboard", label: "Dashboard", icon: Home },
+    { id: "applicants", label: "Applicants Status", icon: UserCheck }, // Added new menu item
     // { id: "candidates", label: "Candidates", icon: Users },
     // { id: "analytics", label: "Analytics", icon: BarChart3 },
   ]

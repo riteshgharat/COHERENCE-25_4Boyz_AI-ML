@@ -17,32 +17,22 @@ interface DashboardContentProps {
 export function DashboardContent({ activeTab }: DashboardContentProps) {
   const { toggle } = useSidebar();
 
-  const speak = (text: string) => {
-    if ("speechSynthesis" in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      window.speechSynthesis.speak(utterance);
-    }
-  };
-
   const renderContent = () => {
     switch (activeTab) {
+      case "upload":
+        return <ResumeUpload />;
       case "dashboard":
         return <DashboardOverview />;
       case "resumes":
         return <ResumesList />;
-      case "upload":
-        return <ResumeUpload />;
       case "analytics":
         return <AnalyticsPanel />;
       case "applicants":
         return <ApplicationList />;
       default:
-        return <DashboardOverview />;
+        return <ResumeUpload />;
     }
   };
-
-  // Announce the active tab
-  // speak(`hello world${activeTab} tab`)
 
   return (
     <main className="flex-1">

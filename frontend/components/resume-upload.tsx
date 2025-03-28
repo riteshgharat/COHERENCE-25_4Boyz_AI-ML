@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUp, Upload } from "lucide-react";
 import { useResumeContext } from "@/context/resume-context";
-import {keywords} from "../llm/gemini.js";
+import { keywords } from "../llm/gemini.js";
 
 export function ResumeUpload() {
   const [files, setFiles] = useState<File[]>([]);
@@ -26,7 +26,15 @@ export function ResumeUpload() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [jobDescription, setJobDescription] = useState("");
 
-  const { fetchRatingData, setLanguageTools } = useResumeContext();
+  const { fetchRatingData, saveJobDescription } = useResumeContext();
+
+  // Load job description from localStorage on component mount
+  useEffect(() => {
+    const savedJobDescription = localStorage.getItem('jobDescription');
+    if (savedJobDescription) {
+      setJobDescription(savedJobDescription);
+    }
+  }, []);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -66,20 +74,23 @@ export function ResumeUpload() {
     setUploadSuccess(false);
   
     try {
-      const extractedKeywords = await keywords(jobDescription); // ✅ Call LLM
+      // Extract keywords from job description
+      const extractedKeywords = await keywords(jobDescription); // Call LLM
       console.log("Extracted Keywords:", extractedKeywords);
-      
-      // ✅ Convert array to comma-separated string
+  
+      // Convert array to comma-separated string
       const formattedDescription = extractedKeywords.join(", "); 
-      setLanguageTools(formattedDescription);
+      
+      // Save the formatted description to localStorage and context
+      saveJobDescription(formattedDescription);
+  
       const formData = new FormData();
-
-      formData.append("job_requirement", formattedDescription);
+      formData.append("job_requirement", jobDescription);
   
       files.forEach((file) => {
         formData.append("files", file);
       });
-
+  
       const response = await fetch(
         process.env.NEXT_PUBLIC_BACKEND_UPLOAD_URL as string,
         {
@@ -191,7 +202,13 @@ export function ResumeUpload() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline">Cancel</Button>
+          <Button variant="outline" onClick={() => {
+            setFiles([]);
+            setUploadError("");
+            setUploadSuccess(false);
+          }}>
+            Cancel
+          </Button>
           <Button
             disabled={files.length === 0 || isUploading || !jobDescription.trim()}
             onClick={handleUpload}
