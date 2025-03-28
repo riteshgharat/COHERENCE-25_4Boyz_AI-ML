@@ -6,7 +6,7 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { DashboardContent } from "@/components/dashboard-content"
 
 export function DashboardPage() {
-  const [activeTab, setActiveTab] = useState("dashboard")
+  const [activeTab, setActiveTab] = useState("upload")
 
   return (
     <SidebarProvider>

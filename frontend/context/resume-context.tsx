@@ -1,12 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 interface ResumeRating {
   preview?: string;
   resume_id: string;
   filename: string;
   score: number;
+  summary?: string;
 }
 
 interface RatingResponse {
@@ -24,16 +25,38 @@ type ResumeContextType = {
   fetchRatingData: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
+  saveJobDescription: (description: string) => void;
 };
 
 const ResumeContext = createContext<ResumeContextType | undefined>(undefined);
 
+// Default job description if none is in localStorage
+const DEFAULT_JOB_DESCRIPTION = "HTML, CSS, JavaScript, React, Angular, Vue.js";
+
 export function ResumeProvider({ children }: { children: ReactNode }) {
   const [selectedPosition, setSelectedPosition] = useState("frontend");
-  const [languageTools, setLanguageTools] = useState("HTML, CSS, JavaScript, React, Angular, Vue.js");
+  const [languageTools, setLanguageTools] = useState(DEFAULT_JOB_DESCRIPTION);
   const [ratingData, setRatingData] = useState<RatingResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load saved job description from localStorage on initial render
+  useEffect(() => {
+    if (typeof window !== 'undefined') {  // Check if we're in the browser
+      const savedJobDescription = localStorage.getItem('jobDescription');
+      if (savedJobDescription) {
+        setLanguageTools(savedJobDescription);
+      }
+    }
+  }, []);
+
+  // Function to save job description to localStorage
+  const saveJobDescription = (description: string) => {
+    setLanguageTools(description);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('jobDescription', description);
+    }
+  };
 
   const fetchRatingData = async (forceRefresh = false) => {
     // If we already have data and not forcing refresh, don't fetch again
@@ -81,7 +104,8 @@ export function ResumeProvider({ children }: { children: ReactNode }) {
         setRatingData,
         fetchRatingData,
         isLoading,
-        error
+        error,
+        saveJobDescription
       }}
     >
       {children}

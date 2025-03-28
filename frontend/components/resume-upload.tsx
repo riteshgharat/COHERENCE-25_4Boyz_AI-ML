@@ -1,8 +1,7 @@
 "use client";
 
 import type React from "react";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,16 +13,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { FileUp, Upload } from "lucide-react";
-import { useEffect } from "react";
 import { useResumeContext } from "@/context/resume-context";
+import { keywords } from "../llm/gemini.js";
 
 export function ResumeUpload() {
   const [files, setFiles] = useState<File[]>([]);
@@ -31,37 +24,17 @@ export function ResumeUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [jobDescription, setJobDescription] = useState("");
 
-  // Use the context
-  const {
-    selectedPosition,
-    setSelectedPosition,
-    languageTools,
-    setLanguageTools,
-    fetchRatingData, // Add this to get the function from context
-  } = useResumeContext();
+  const { fetchRatingData, saveJobDescription } = useResumeContext();
 
+  // Load job description from localStorage on component mount
   useEffect(() => {
-    switch (selectedPosition) {
-      case "frontend":
-        setLanguageTools("HTML, CSS, JavaScript, React, Angular, Vue.js");
-        break;
-      case "devops":
-        setLanguageTools("Python, Bash, Go, Kubernetes, Git, Docker, CI/CD");
-        break;
-      case "product":
-        setLanguageTools("Jira, Trello, Slack, Confluence, Google Analytics");
-        break;
-      case "data":
-        setLanguageTools("Python, R, SQL, Pandas, NumPy, TensorFlow");
-        break;
-      case "design":
-        setLanguageTools("Figma, Adobe XD, Sketch, HTML, CSS, JavaScript");
-        break;
-      default:
-        setLanguageTools("HTML, CSS, JavaScript");
+    const savedJobDescription = localStorage.getItem('jobDescription');
+    if (savedJobDescription) {
+      setJobDescription(savedJobDescription);
     }
-  }, [selectedPosition, setLanguageTools]);
+  }, []);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -95,23 +68,29 @@ export function ResumeUpload() {
 
   const handleUpload = async () => {
     if (files.length === 0) return;
-
+  
     setIsUploading(true);
     setUploadError("");
     setUploadSuccess(false);
-
+  
     try {
+      // Extract keywords from job description
+      const extractedKeywords = await keywords(jobDescription); // Call LLM
+      console.log("Extracted Keywords:", extractedKeywords);
+  
+      // Convert array to comma-separated string
+      const formattedDescription = extractedKeywords.join(", "); 
+      
+      // Save the formatted description to localStorage and context
+      saveJobDescription(formattedDescription);
+  
       const formData = new FormData();
-
-      // Add job position and language tools to the form data
-      formData.append("jobPosition", selectedPosition);
-      formData.append("languageTools", languageTools);
-
-      // Add all files to the form data
+      formData.append("job_requirement", jobDescription);
+  
       files.forEach((file) => {
         formData.append("files", file);
       });
-
+  
       const response = await fetch(
         process.env.NEXT_PUBLIC_BACKEND_UPLOAD_URL as string,
         {
@@ -119,17 +98,12 @@ export function ResumeUpload() {
           body: formData,
         }
       );
-
+  
       if (!response.ok) {
         throw new Error(`Upload failed with status: ${response.status}`);
       }
-
-      const result = await response.json();
-      console.log("Upload successful:", result);
-
-      // After successful upload, refresh the rating data using the context function
+  
       await fetchRatingData();
-
       setUploadSuccess(true);
       setFiles([]);
     } catch (error) {
@@ -141,6 +115,7 @@ export function ResumeUpload() {
       setIsUploading(false);
     }
   };
+  
 
   return (
     <div className="grid gap-6">
@@ -153,38 +128,15 @@ export function ResumeUpload() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="job-position">Job Position</Label>
-                // Update the Select component to use the context
-                <Select
-                  value={selectedPosition}
-                  onValueChange={setSelectedPosition}
-                >
-                  <SelectTrigger id="job-position">
-                    <SelectValue placeholder="Select job position" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="frontend">
-                      Senior Frontend Developer
-                    </SelectItem>
-                    <SelectItem value="devops">DevOps Engineer</SelectItem>
-                    <SelectItem value="product">Product Manager</SelectItem>
-                    <SelectItem value="data">Data Scientist</SelectItem>
-                    <SelectItem value="design">UX/UI Designer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="language-tools">Languages/Tools</Label>
-                <Input
-                  type="text"
-                  placeholder="Enter Languages & Tools"
-                  id="language-tools"
-                  value={languageTools}
-                  onChange={(e) => setLanguageTools(e.target.value)}
-                />
-              </div>
+            {/* Job Description Input */}
+            <div className="space-y-2">
+              <Label htmlFor="job-description">Job Description</Label>
+              <Textarea
+                id="job-description"
+                placeholder="Enter job description"
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+              />
             </div>
 
             <div
@@ -250,40 +202,18 @@ export function ResumeUpload() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline">Cancel</Button>
+          <Button variant="outline" onClick={() => {
+            setFiles([]);
+            setUploadError("");
+            setUploadSuccess(false);
+          }}>
+            Cancel
+          </Button>
           <Button
-            disabled={files.length === 0 || isUploading}
+            disabled={files.length === 0 || isUploading || !jobDescription.trim()}
             onClick={handleUpload}
           >
-            {isUploading ? (
-              <span className="flex items-center">
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Uploading...
-              </span>
-            ) : (
-              `Upload and Process ${
-                files.length > 0 ? `(${files.length})` : ""
-              }`
-            )}
+            {isUploading ? "Uploading..." : `Upload and Process (${files.length})`}
           </Button>
         </CardFooter>
 

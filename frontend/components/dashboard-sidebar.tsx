@@ -2,7 +2,7 @@
 
 import { useSidebar } from "@/components/sidebar-provider"
 import { Button } from "@/components/ui/button"
-import { BarChart3, FileText, Home, Menu, Settings, Upload, Users } from "lucide-react"
+import { BarChart3, FileText, Home, Menu, Settings, Upload, Users, UserCheck } from "lucide-react"
 
 interface DashboardSidebarProps {
   activeTab: string
@@ -13,10 +13,11 @@ export function DashboardSidebar({ activeTab, setActiveTab }: DashboardSidebarPr
   const { isOpen, toggle } = useSidebar()
 
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: Home },
-    { id: "resumes", label: "Resumes", icon: FileText },
-    // { id: "candidates", label: "Candidates", icon: Users },
     { id: "upload", label: "Upload", icon: Upload },
+    { id: "resumes", label: "Resumes", icon: FileText },
+    { id: "dashboard", label: "Dashboard", icon: Home },
+    { id: "applicants", label: "Applicants Status", icon: UserCheck }, // Added new menu item
+    // { id: "candidates", label: "Candidates", icon: Users },
     // { id: "analytics", label: "Analytics", icon: BarChart3 },
   ]
 
