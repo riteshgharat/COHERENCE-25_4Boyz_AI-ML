@@ -454,6 +454,8 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 
+from dotenv import load_dotenv
+load_dotenv()
 
 EMAIL_SENDER = "programmingrit0@gmail.com"
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")  # Ensure you set this in your environment
