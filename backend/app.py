@@ -119,33 +119,6 @@ def calculate_score(resume_bow, job_topics, num_topics):
 # Load initial resumes on startup
 load_initial_resumes()
 
-import fitz  # PyMuPDF
-
-HIGHLIGHT_FOLDER = "./highlighted_resumes"
-if not os.path.exists(HIGHLIGHT_FOLDER):
-    os.makedirs(HIGHLIGHT_FOLDER)
-
-def highlight_text_in_pdf(pdf_filename, job_description):
-    input_path = os.path.join(UPLOAD_FOLDER, pdf_filename)
-    output_path = os.path.join(HIGHLIGHT_FOLDER, pdf_filename)
-
-    if not os.path.exists(input_path):
-        return None
-
-    doc = fitz.open(input_path)
-
-    # Convert job description into a list of words for search
-    words_to_highlight = job_description.split()
-
-    for page in doc:
-        for word in words_to_highlight:
-            text_instances = page.search_for(word)
-            for inst in text_instances:
-                page.add_highlight_annot(inst)
-
-    doc.save(output_path)
-    doc.close()
-    return output_path  # Return the highlighted PDF path
 
 @app.route('/upload', methods=['POST'])
 def upload_resumes():
@@ -156,18 +129,12 @@ def upload_resumes():
     if not files or all(file.filename == '' for file in files):
         return jsonify({"error": "No files selected"}), 400
 
-    job_description = request.form.get('job_description', '').strip()
-    if not job_description:
-        return jsonify({"error": "Job description is required"}), 400
-
     uploaded_files = []
-    highlighted_files = []
     skipped_files = []
-
     for file in files:
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            file_path = os.path.join(app.config['HIGHLIGHT_FOLDER'], filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             
             if os.path.exists(file_path):
                 skipped_files.append(filename)
@@ -180,11 +147,6 @@ def upload_resumes():
                 text += page.extract_text()
             resumes.append((filename, text.strip()))
             uploaded_files.append(filename)
-
-            # **Highlight the job description**
-            highlighted_path = highlight_text_in_pdf(filename, job_description)
-            if highlighted_path:
-                highlighted_files.append(highlighted_path)
         else:
             return jsonify({"error": f"Invalid file type: {file.filename}. Only PDFs are allowed."}), 400
 
@@ -192,9 +154,8 @@ def upload_resumes():
         process_resumes()
 
     response = {
-        "message": "Upload processed with highlighting",
+        "message": "Upload processed",
         "uploaded_files": uploaded_files,
-        "highlighted_files": highlighted_files,
         "skipped_files": skipped_files,
         "resume_count": len(cleaned_resumes)
     }
@@ -293,47 +254,47 @@ def rate_resumes():
     return jsonify(response), 200
 
 
-# import fitz
-# import os
+import fitz
+import os
 
-# HIGHLIGHT_FOLDER = "./highlighted_resumes"
-# if not os.path.exists(HIGHLIGHT_FOLDER):
-#     os.makedirs(HIGHLIGHT_FOLDER)
+HIGHLIGHT_FOLDER = "./highlighted_resumes"
+if not os.path.exists(HIGHLIGHT_FOLDER):
+    os.makedirs(HIGHLIGHT_FOLDER)
 
-# def highlight_text_in_pdf(pdf_filename, job_description):
-#     input_path = os.path.join(UPLOAD_FOLDER, pdf_filename)
-#     output_path = os.path.join(HIGHLIGHT_FOLDER, pdf_filename)
+def highlight_text_in_pdf(pdf_filename, job_description):
+    input_path = os.path.join(UPLOAD_FOLDER, pdf_filename)
+    output_path = os.path.join(HIGHLIGHT_FOLDER, pdf_filename)
 
-#     if not os.path.exists(input_path):
-#         return {"error": "File not found"}, 404
+    if not os.path.exists(input_path):
+        return {"error": "File not found"}, 404
 
-#     doc = fitz.open(input_path)
+    doc = fitz.open(input_path)
 
-#     # Convert job description into a list of words for search
-#     words_to_highlight = job_description.split()
+    # Convert job description into a list of words for search
+    words_to_highlight = job_description.split()
 
-#     for page in doc:
-#         for word in words_to_highlight:
-#             text_instances = page.search_for(word)
-#             for inst in text_instances:
-#                 page.add_highlight_annot(inst)
+    for page in doc:
+        for word in words_to_highlight:
+            text_instances = page.search_for(word)
+            for inst in text_instances:
+                page.add_highlight_annot(inst)
 
-#     doc.save(output_path)
-#     doc.close()
+    doc.save(output_path)
+    doc.close()
 
-#     return {"message": f"Highlighted file saved at {output_path}"}, 200
+    return {"message": f"Highlighted file saved at {output_path}"}, 200
 
-# @app.route('/highlight_resume', methods=['POST'])
-# def highlight_resume():
-#     data = request.get_json()
-#     if not data or 'filename' not in data or 'job_description' not in data:
-#         return jsonify({"error": "Missing 'filename' or 'job_description' in request body"}), 400
+@app.route('/highlight_resume', methods=['POST'])
+def highlight_resume():
+    data = request.get_json()
+    if not data or 'filename' not in data or 'job_description' not in data:
+        return jsonify({"error": "Missing 'filename' or 'job_description' in request body"}), 400
 
-#     filename = secure_filename(data['filename'])
-#     job_description = data['job_description']
+    filename = secure_filename(data['filename'])
+    job_description = data['job_description']
 
-#     response, status = highlight_text_in_pdf(filename, job_description)
-#     return jsonify(response), status
+    response, status = highlight_text_in_pdf(filename, job_description)
+    return jsonify(response), status
 
 
 # import fitz  # PyMuPDF
@@ -468,6 +429,67 @@ def huploaded_file(filename):
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "API is running", "resume_count": len(cleaned_resumes)}), 200
+
+
+
+@app.route('/delete_all', methods=['POST'])
+def delete_files():
+    try:
+        # Ensure the folder exists
+        if not os.path.exists(UPLOAD_FOLDER):
+            return jsonify({"error": "Folder does not exist"}), 404
+        
+        # Iterate through files in the folder and delete them
+        for filename in os.listdir(UPLOAD_FOLDER):
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+
+        return jsonify({"message": "All files deleted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+
+import smtplib
+import ssl
+from email.message import EmailMessage
+
+
+EMAIL_SENDER = "programmingrit0@gmail.com"
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")  # Ensure you set this in your environment
+
+def send_email(email_receiver, subject, body):
+    """Function to send an email using SMTP."""
+    em = EmailMessage()
+    em["From"] = EMAIL_SENDER
+    em["To"] = email_receiver
+    em["Subject"] = subject
+    em.set_content(body)
+
+    context = ssl.create_default_context()
+    
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp:
+            smtp.login(EMAIL_SENDER, EMAIL_PASSWORD)
+            smtp.sendmail(EMAIL_SENDER, email_receiver, em.as_string())
+        return {"message": "Email sent successfully", "recipient": email_receiver}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.route('/send_email', methods=['POST'])
+def send_email_route():
+    """API route to send an email."""
+    data = request.get_json()
+
+    if not data or "email_receiver" not in data or "subject" not in data or "body" not in data:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    response = send_email(data["email_receiver"], data["subject"], data["body"])
+    
+    if "error" in response:
+        return jsonify(response), 500
+    return jsonify(response), 200
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
