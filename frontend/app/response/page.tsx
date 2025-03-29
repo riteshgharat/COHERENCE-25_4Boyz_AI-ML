@@ -15,8 +15,8 @@ function page() {
   };
 
   const [formData, setFormData] = useState({
-    firstName: searchParams.get("fname") ?? "",
-    lastName: searchParams.get("lname") ?? "",
+    firstName: searchParams.get("fname")?.split("_")[0] ?? "",
+    lastName: searchParams.get("lname")?.split("_")[1] ?? "",
     dateOfBirth: formatDate(searchParams.get("dob")), // Format the dob
     governmentId: searchParams.get("govId") ?? "",
     email: searchParams.get("email") ?? "",

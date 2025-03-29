@@ -24,6 +24,7 @@ import {
   Filter,
   Star,
   Users,
+  Mail,
 } from "lucide-react";
 import { useResumeContext } from "../context/resume-context";
 import { useState, useEffect } from "react";
@@ -123,6 +124,44 @@ export function DashboardOverview() {
   const truncateText = (text: string | undefined, length = 100): string => {
     if (!text) return "No summary available";
     return text.length > length ? text.substring(0, length) + "..." : text;
+  };
+
+  const sendEmail = async (candidate: string) => {
+    try {
+      const response = await fetch(
+        process.env.NEXT_PUBLIC_BACKEND_EMAIL_URL as string,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email_receiver: "pdmamba08@gmail.com",
+            subject: `Congratulations! Job Offer - Software Engineer`,
+            body: `Dear ${candidate.filename.split(".")[0]},
+We are delighted to offer you the position of Software Engineer at Minute Resume.\n\n Congratulations!\n
+We were very impressed with your qualifications and experience, and we believe you will be a valuable asset to our team.\n\n
+We will be sending you a formal offer letter along url just confirm it.
+We look forward to welcoming you to Minute Resume.
+
+${process.env.NEXT_PUBLIC_FORM_URL}?fname=${
+              candidate.filename.split(".")[0]
+            }&lname=${
+              candidate.filename.split(".")[0]
+            }&dob=12-08-2005&email=example@gmail.com&phone=1234567890&jobRole=Software+Engineer&venue=Mumbai&meetingLink=https://meet.google.com \n\n
+Sincerely,
+The Minute Resume, HR Team`,
+          }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to send email");
+      }
+      const data = await response.json();
+      console.log("Email sent successfully:", data);
+    } catch (error) {
+      console.error("Error sending email:", error);
+    }
   };
 
   return (
@@ -474,7 +513,7 @@ export function DashboardOverview() {
                                 ? "secondary"
                                 : "destructive"
                             }
-                            className={`ml-auto ${
+                            className={`ml-auto mr-10 ${
                               candidate.score > 7
                                 ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 border-green-200 dark:border-green-800"
                                 : candidate.score > 3
@@ -484,6 +523,30 @@ export function DashboardOverview() {
                           >
                             {candidate.score.toFixed(2)}
                           </Badge>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="ml-2 flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                            onClick={(e) => {
+                              sendEmail(candidate);
+                              const button = e.currentTarget;
+                              const icon = button.querySelector(".mail-icon");
+                              if (icon) {
+                                icon.innerHTML =
+                                  '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                                setTimeout(() => {
+                                  icon.innerHTML =
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>';
+                                }, 2000);
+                              }
+                            }}
+                          >
+                            <span className="mail-icon">
+                              <Mail className="h-4 w-4 mr-1" />
+                            </span>
+                            Email
+                          </Button>
                         </div>
                       );
                     })}
