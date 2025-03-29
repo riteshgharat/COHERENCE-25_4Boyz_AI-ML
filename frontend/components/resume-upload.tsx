@@ -79,13 +79,15 @@ export function ResumeUpload() {
       console.log("Extracted Keywords:", extractedKeywords);
   
       // Convert array to comma-separated string
-      const formattedDescription = extractedKeywords.join(", "); 
+      const formattedDescription = extractedKeywords.join(" , "); 
       
       // Save the formatted description to localStorage and context
       saveJobDescription(formattedDescription);
   
+      console.log("Formatted Job Description:", formattedDescription);
+
       const formData = new FormData();
-      formData.append("job_requirement", jobDescription);
+      formData.append("job_requirement", formattedDescription);
   
       files.forEach((file) => {
         formData.append("files", file);

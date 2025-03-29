@@ -31,7 +31,7 @@ type ResumeContextType = {
 const ResumeContext = createContext<ResumeContextType | undefined>(undefined);
 
 // Default job description if none is in localStorage
-const DEFAULT_JOB_DESCRIPTION = "HTML, CSS, JavaScript, React, Angular, Vue.js";
+const DEFAULT_JOB_DESCRIPTION = "Python, Internship";
 
 export function ResumeProvider({ children }: { children: ReactNode }) {
   const [selectedPosition, setSelectedPosition] = useState("frontend");

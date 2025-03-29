@@ -22,7 +22,7 @@ export async function keywords(description) {
     });
 
     const result = await chatSession.sendMessage(
-      `Based on the following job description: "${description}", extract key technical terms such as tech stack, years of experience, and relevant skills. Output an array of important keywords only.`
+      `Based on the following job description: "${description}", extract key technical terms such as tech stack, years of experience, and relevant skills, language used. Output an array of important keywords only.`
     );
 
     const textResponse = result.response.candidates?.[0]?.content?.parts?.[0]?.text || "[]";

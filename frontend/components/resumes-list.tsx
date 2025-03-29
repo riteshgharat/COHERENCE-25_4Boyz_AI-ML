@@ -159,6 +159,79 @@ export function ResumesList() {
     }));
   };
 
+  const generateHightlightedPDF = async (filename: string): Promise<void> => {
+    try {
+      setError(null); // Clear any previous errors
+
+      // Use the correct URL - either from env or hardcoded as fallback
+      const highlightUrl =
+        process.env.NEXT_PUBLIC_BACKEND_HIGHLIGHT_URL ||
+        "http://192.168.22.186:5000/highlight_resume";
+
+      console.log("Generating highlighted PDF for:", filename);
+      console.log("Using endpoint:", highlightUrl);
+
+      // Use the actual filename from parameters and languageTools from context
+      const response = await fetch(highlightUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          filename: filename,
+          job_description: ` ${languageTools}`, // Use the job description from context
+        }),
+        // Added to ensure proper error handling for CORS issues
+        mode: "cors",
+        credentials: "same-origin",
+      });
+
+      // Check for specific status codes for better error messages
+      if (response.status === 404) {
+        throw new Error(
+          "API endpoint not found. Check if the backend service is running."
+        );
+      } else if (response.status === 400) {
+        const errorData = await response.json();
+        throw new Error(
+          `Bad request: ${
+            errorData.message || errorData.error || "Unknown error"
+          }`
+        );
+      } else if (!response.ok) {
+        throw new Error(
+          `Failed to generate PDF: ${response.status} ${response.statusText}`
+        );
+      }
+
+      // Check content type to determine how to handle the response
+      const contentType = response.headers.get("content-type");
+
+      if (contentType && contentType.includes("application/json")) {
+        // If we get JSON back (possibly an error message)
+        const data = await response.json();
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        // If it's a success message with a URL
+        if (data.url) {
+          window.open(data.url, "_blank");
+          return;
+        }
+      }
+      // Show success message
+      console.log("Highlighted PDF generated successfully");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      // Show error to user with more detailed information
+      setError(
+        error instanceof Error
+          ? `Failed to generate highlighted PDF: ${error.message}`
+          : "Failed to generate highlighted PDF: Unknown error"
+      );
+    }
+  };
+
   // Fetch data only once when component mounts
   useEffect(() => {
     fetchRatingData();
@@ -271,11 +344,25 @@ export function ResumesList() {
                                 : "No summary available"}
                             </td>
                             <td>
-                              <a href={`${process.env.NEXT_PUBLIC_BACKEND_UPLOAD_URL}s/${resume.filename}`} download target="_blank">
-                                <Button variant="ghost" size="sm">
-                                  <Download className="h-4 w-4 text-blue-500" />
-                                </Button>
-                              </a>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={async () => {
+                                  await generateHightlightedPDF(
+                                    resume.filename
+                                  );
+                                  const a = document.createElement("a");
+                                  a.href = `${process.env.NEXT_PUBLIC_BACKEND_HUPLOAD_URL}/${resume.filename}`; // Use the correct URL for download
+                                  a.target = "_blank"; // Open in a new tab
+                                  a.download = `${process.env.NEXT_PUBLIC_BACKEND_HUPLOAD_URL}/${resume.filename}`;
+                                  document.body.appendChild(a); // Required for Firefox
+                                  a.click();
+                                  // window.URL.revokeObjectURL(url);
+                                  document.body.removeChild(a);
+                                }}
+                              >
+                                <Download className="h-4 w-4 text-blue-500" />
+                              </Button>
                             </td>
                           </tr>
                         ))
